@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <random>
 #include <sstream>
 #include <thread>
 
@@ -153,14 +154,25 @@ class Drop : public Sprite {
 };
 
 int main(int, char**) {
+  std::random_device r;
+  std::default_random_engine e(r());
+  std::uniform_int_distribution<unsigned int> spawn(0, 20);
+  std::uniform_int_distribution<int> x_dist(0, WIDTH - 1);
+  std::uniform_int_distribution<int> y_dist(0, HEIGHT - 1);
+  std::uniform_real_distribution<float> hue_dist(0, 360);
+  std::uniform_real_distribution<float> sat_dist(0.2, 1);
+  std::uniform_real_distribution<float> val_dist(0.8, 1);
+
   Alma a;
   std::list<std::shared_ptr<Sprite>> sprites;
-  sprites.push_back(std::shared_ptr<Sprite>(new Drop(3, 4, { 100, 1, 0.8 })));
-  sprites.push_back(std::shared_ptr<Sprite>(new Drop(5, 0, { 200, 1, 0.8 })));
-  sprites.push_back(std::shared_ptr<Sprite>(new Drop(8, 8, { 300, 1, 0.8 })));
 
   for (;;) {
     auto start = std::chrono::steady_clock::now();
+
+    if (!spawn(e))
+      sprites.push_back(std::shared_ptr<Sprite>(
+            new Drop(x_dist(e), y_dist(e),
+              { hue_dist(e), sat_dist(e), val_dist(e) })));
 
     for (auto& s : sprites)
       s->render(a);
