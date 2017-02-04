@@ -133,6 +133,7 @@ class Drop : public Sprite {
     virtual void render(Alma& a) const {
       int inside = (int)radius;
       float interp = pow((radius - inside), 2.2);
+
       // Draw border
       for (int xp = -inside - 1; xp <= inside + 1; xp++)
         for (int yp = -inside - 1; yp <= inside + 1; yp++)
@@ -146,8 +147,8 @@ class Drop : public Sprite {
 
     virtual bool update() {
       radius += 0.01;
-      if (radius > 3)
-        c *= 0.9;
+      if (radius > 1.5)
+        c *= 0.999999;
 
       return radius < 6;
     }
@@ -156,12 +157,12 @@ class Drop : public Sprite {
 int main(int, char**) {
   std::random_device r;
   std::default_random_engine e(r());
-  std::uniform_int_distribution<unsigned int> spawn(0, 50);
+  std::uniform_int_distribution<unsigned int> spawn(0, 30);
   std::uniform_int_distribution<int> x_dist(0, WIDTH - 1);
   std::uniform_int_distribution<int> y_dist(0, HEIGHT - 1);
   std::uniform_real_distribution<float> hue_dist(0, 360);
-  std::uniform_real_distribution<float> sat_dist(0.2, 1);
-  std::uniform_real_distribution<float> val_dist(0.2, 0.8);
+  std::uniform_real_distribution<float> sat_dist(0.4, 1);
+  std::uniform_real_distribution<float> val_dist(0.4, 0.9);
 
   Alma a;
   std::list<std::shared_ptr<Sprite>> sprites;
