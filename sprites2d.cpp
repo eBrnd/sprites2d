@@ -1,6 +1,8 @@
 #include <sstream>
 #include <array>
 #include <iostream>
+#include <list>
+#include <memory>
 
 struct RGBColor {
   unsigned char r, g, b;
@@ -48,17 +50,51 @@ public:
     int index = 0;
     for (auto& row : pixels)
       for (auto& p : row) {
-        oss << index++ << " : " << p.color.r << "\n";
-        oss << index++ << " : " << p.color.g << "\n";
-        oss << index++ << " : " << p.color.b << "\n";
+        oss << index++ << " : " << (int)p.color.r << "\n";
+        oss << index++ << " : " << (int)p.color.g << "\n";
+        oss << index++ << " : " << (int)p.color.b << "\n";
       }
     oss << "\n";
     return oss.str();
   }
+
+  void put(unsigned int x, unsigned int y, const RGBColor& color) {
+    pixels[x][y].color = color;
+  }
+};
+
+class Sprite {
+  public:
+    virtual void render(Alma& a) const = 0;
+    virtual bool update() = 0;
+};
+
+class Drop : public Sprite {
+  private:
+    unsigned int x, y;
+
+  public:
+    Drop(unsigned int x, unsigned int y)
+      : x(x), y(y) { }
+
+    virtual void render(Alma& a) const {
+      a.put(x, y, { 255, 255, 255 });
+    }
+
+    virtual bool update() {
+      return true;
+    }
 };
 
 int main(int, char**) {
   Alma a;
-  std::cout << a.serialize();
+  std::list<std::shared_ptr<Sprite>> sprites;
+  sprites.push_back(std::shared_ptr<Sprite>(new Drop(0, 0)));
+  for (;;) {
+    for (auto& s : sprites)
+      s->render(a);
+
+    std::cout << a.serialize();
+  }
   return 0;
 }
