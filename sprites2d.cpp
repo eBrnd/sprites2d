@@ -87,14 +87,14 @@ class Drop : public Sprite {
 
   public:
     Drop(int x, int y, const RGBColor c)
-      : x(x), y(y), radius(1), c(c) { }
+      : x(x), y(y), radius(0), c(c) { }
 
     virtual void render(Alma& a) const {
       int inside = (int)radius;
       float interp = (radius - inside);
       // Draw border
-      for (int xp = -inside-1; xp <= inside+1; xp++)
-        for (int yp = -inside-1; yp <= inside+1; yp++)
+      for (int xp = -inside - 1; xp <= inside + 1; xp++)
+        for (int yp = -inside - 1; yp <= inside + 1; yp++)
           a.put(x + xp, y + yp, c * interp);
 
       // Draw inside
@@ -105,7 +105,10 @@ class Drop : public Sprite {
 
     virtual bool update() {
       radius += 0.02;
-      return radius < 10;
+      if (radius > 3)
+        c *= 0.9;
+
+      return radius < 6;
     }
 };
 
