@@ -1,8 +1,10 @@
-#include <sstream>
 #include <array>
+#include <chrono>
 #include <iostream>
 #include <list>
 #include <memory>
+#include <sstream>
+#include <thread>
 
 struct RGBColor {
   unsigned char r, g, b;
@@ -40,10 +42,15 @@ class Alma {
 
 public:
   Alma() {
+    clear();
+  }
+
+  void clear() {
     for (auto& row : pixels)
       for (auto& p : row)
         p = {{ 0, 0, 0 }};
   }
+
 
   std::string serialize() const {
     std::ostringstream oss;
@@ -58,8 +65,11 @@ public:
     return oss.str();
   }
 
-  void put(unsigned int x, unsigned int y, const RGBColor& color) {
-    pixels[x][y].color = color;
+  void put(int x, int y, const RGBColor& color) {
+    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
+      return;
+
+    pixels[y][x].color += color;
   }
 };
 
@@ -71,30 +81,61 @@ class Sprite {
 
 class Drop : public Sprite {
   private:
-    unsigned int x, y;
+    int x, y;
+    float radius;
+    RGBColor c;
 
   public:
-    Drop(unsigned int x, unsigned int y)
-      : x(x), y(y) { }
+    Drop(int x, int y, const RGBColor c)
+      : x(x), y(y), radius(1), c(c) { }
 
     virtual void render(Alma& a) const {
-      a.put(x, y, { 255, 255, 255 });
+      int inside = (int)radius;
+      float interp = (radius - inside);
+      // Draw border
+      for (int xp = -inside-1; xp <= inside+1; xp++)
+        for (int yp = -inside-1; yp <= inside+1; yp++)
+          a.put(x + xp, y + yp, c * interp);
+
+      // Draw inside
+      for (int xp = -inside; xp <= inside; xp++)
+        for (int yp = -inside; yp <= inside; yp++)
+          a.put(x + xp, y + yp, c * (1 - interp));
     }
 
     virtual bool update() {
-      return true;
+      radius += 0.02;
+      return radius < 10;
     }
 };
 
 int main(int, char**) {
   Alma a;
   std::list<std::shared_ptr<Sprite>> sprites;
-  sprites.push_back(std::shared_ptr<Sprite>(new Drop(0, 0)));
+  sprites.push_back(std::shared_ptr<Sprite>(new Drop(3, 4, { 255,255,255 })));
   for (;;) {
+    auto start = std::chrono::steady_clock::now();
+
     for (auto& s : sprites)
       s->render(a);
 
+    for (auto spr_it = sprites.begin(); spr_it != sprites.end(); ) {
+      if ((*spr_it)->update())
+        spr_it++;
+      else
+        spr_it = sprites.erase(spr_it);
+    }
+
     std::cout << a.serialize();
+    a.clear();
+
+    std::cerr << "Rendering " << sprites.size() << " sprites took " <<
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start
+          ).count()
+        << "ms." << std::endl; // Frame " << FC << std::endl;
+    std::this_thread::sleep_until(start + std::chrono::milliseconds(40));
   }
+
   return 0;
 }
