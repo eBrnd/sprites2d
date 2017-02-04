@@ -30,6 +30,46 @@ struct RGBColor {
   }
 };
 
+struct HSVColor {
+  public:
+    HSVColor(float h, float s, float v) : s(s), v(v) {
+      while (h > 360)
+        h -= 360;
+      this->h = h;
+    }
+
+    RGBColor to_rgb() const {
+      const int hi = h / 60;
+      const float f = h / 60 - hi;
+      const float p = v * (1 - s);
+      const float q = v * (1 - s * f);
+      const float t = v * (1 - s * (1 - f));
+
+      float r, g, b;
+      switch (hi) {
+        case 0: case 6: r = v; g = t; b = p; break;
+        case 1:         r = q; g = v; b = p; break;
+        case 2:         r = p; g = v; b = t; break;
+        case 3:         r = p; g = q; b = v; break;
+        case 4:         r = t; g = p; b = v; break;
+        case 5:         r = v; g = p; b = q; break;
+        default:
+          throw std::range_error("hue out of range");
+      }
+
+      return RGBColor{
+        static_cast<unsigned char>(r * 255),
+        static_cast<unsigned char>(g * 255),
+        static_cast<unsigned char>(b * 255)
+      };
+    }
+
+    float& value() { return v; }
+
+  private:
+    float h, s, v;
+};
+
 struct Pixel {
   RGBColor color;
 };
@@ -86,8 +126,8 @@ class Drop : public Sprite {
     RGBColor c;
 
   public:
-    Drop(int x, int y, const RGBColor c)
-      : x(x), y(y), radius(0), c(c) { }
+    Drop(int x, int y, const HSVColor c)
+      : x(x), y(y), radius(0), c(c.to_rgb()) { }
 
     virtual void render(Alma& a) const {
       int inside = (int)radius;
@@ -104,7 +144,7 @@ class Drop : public Sprite {
     }
 
     virtual bool update() {
-      radius += 0.02;
+      radius += 0.08;
       if (radius > 3)
         c *= 0.9;
 
@@ -115,7 +155,10 @@ class Drop : public Sprite {
 int main(int, char**) {
   Alma a;
   std::list<std::shared_ptr<Sprite>> sprites;
-  sprites.push_back(std::shared_ptr<Sprite>(new Drop(3, 4, { 255,255,255 })));
+  sprites.push_back(std::shared_ptr<Sprite>(new Drop(3, 4, { 100, 1, 0.8 })));
+  sprites.push_back(std::shared_ptr<Sprite>(new Drop(5, 0, { 200, 1, 0.8 })));
+  sprites.push_back(std::shared_ptr<Sprite>(new Drop(8, 8, { 300, 1, 0.8 })));
+
   for (;;) {
     auto start = std::chrono::steady_clock::now();
 
