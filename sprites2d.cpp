@@ -161,7 +161,7 @@ int main(int, char**) {
   std::uniform_int_distribution<int> x_dist(0, WIDTH - 1);
   std::uniform_int_distribution<int> y_dist(0, HEIGHT - 1);
   std::uniform_real_distribution<float> hue_dist(0, 360);
-  std::uniform_real_distribution<float> sat_dist(0.4, 1);
+  std::uniform_real_distribution<float> sat_dist(0.7, 1);
   std::uniform_real_distribution<float> val_dist(0.4, 0.9);
 
   Alma a;
