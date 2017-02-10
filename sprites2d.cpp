@@ -75,14 +75,25 @@ struct Pixel {
   RGBColor color;
 };
 
-static const int WIDTH = 12;
-static const int HEIGHT = 9;
+static const int WIDTH = 6;
+static const int HEIGHT = 8;
 
-class Alma {
+class Lightwall {
   std::array<std::array<Pixel, WIDTH>, HEIGHT> pixels;
 
+  const std::array<std::array<int, WIDTH>, HEIGHT> box_map = {{
+    {{357,  18, 369, 186, 249, 228,/*   51 */}},
+    {{279,   9,  57, 159, 300, 108,/*  204 */}},
+    {{261,  42, 183, 201, 273, 246,/*   15 */}},
+    {{306, 168,  24, 138, 309, 165,/*   39 */}},
+    {{258, 222,  87, 363, 291, 231,/*  243 */}},
+    {{252, 114, 180,  75, 282, 141,/*   33 */}},
+    {{264, 288, 120, 135, 255,  99,/*  105 */}},
+    {{285, 207, 102,  45, 297, 216,/*   63 */}},
+  }};
+
 public:
-  Alma() {
+  Lightwall() {
     clear();
   }
 
@@ -95,28 +106,33 @@ public:
 
   std::string serialize() const {
     std::ostringstream oss;
-    int index = 0;
-    for (auto& row : pixels)
+    int ci = 0, ri = 0;
+    for (auto& row : pixels) {
+      ci = 0;
       for (auto& p : row) {
-        oss << index++ << " : " << (int)p.color.r << "\n";
-        oss << index++ << " : " << (int)p.color.g << "\n";
-        oss << index++ << " : " << (int)p.color.b << "\n";
+        int base_adress = box_map[ri][ci];
+        oss << base_adress     << " : " << (int)p.color.r << "\n";
+        oss << base_adress + 1 << " : " << (int)p.color.g << "\n";
+        oss << base_adress + 2 << " : " << (int)p.color.b << "\n";
+        ci++;
       }
+      ri++;
+    }
     oss << "\n";
     return oss.str();
   }
 
   void put(int x, int y, const RGBColor& color) {
-    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
+    if (x < 0 || y < 0 || x >= HEIGHT || y >= WIDTH)
       return;
 
-    pixels[y][x].color += color;
+    pixels[x][y].color += color;
   }
 };
 
 class Sprite {
   public:
-    virtual void render(Alma& a) const = 0;
+    virtual void render(Lightwall& a) const = 0;
     virtual bool update() = 0;
 };
 
@@ -130,7 +146,7 @@ class Drop : public Sprite {
     Drop(int x, int y, const HSVColor c)
       : x(x), y(y), radius(0), c(c.to_rgb()) { }
 
-    virtual void render(Alma& a) const {
+    virtual void render(Lightwall& a) const {
       int inside = (int)radius;
       float interp = pow((radius - inside), 2.2);
 
@@ -164,8 +180,11 @@ int main(int, char**) {
   std::uniform_real_distribution<float> sat_dist(0.7, 1);
   std::uniform_real_distribution<float> val_dist(0.4, 0.9);
 
-  Alma a;
+  Lightwall a;
   std::list<std::shared_ptr<Sprite>> sprites;
+  sprites.push_back(std::shared_ptr<Sprite>(
+        new Drop(x_dist(e), y_dist(e),
+          { hue_dist(e), sat_dist(e), val_dist(e) })));
 
   for (;;) {
     auto start = std::chrono::steady_clock::now();
